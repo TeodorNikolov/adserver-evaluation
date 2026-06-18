@@ -1,13 +1,85 @@
 # Advertising Bid Auction
 
-A command-line PHP application that implements a second-price auction.
+## Overview
 
-Given a CSV file containing advertisement IDs and bids, the program determines:
+This application implements a simple **second-price advertising auction**.
 
-* The winning advertisement (highest bid)
-* The price to pay (second-highest bid)
+Given a CSV file containing advertisement IDs and their bids, the program determines:
 
-Example input:
+- The advertisement with the highest bid (the winner).
+- The second-highest bid (the amount paid by the winner).
+
+The solution is implemented as a command-line application and is designed to handle files containing up to **10,000 rows**.
+
+---
+
+## Requirements
+
+- PHP 8.1 or higher
+
+No external dependencies are required.
+
+---
+
+## Installation
+
+Clone the repository:
+
+```bash
+git clone <repository-url>
+cd task1-auction
+```
+
+---
+
+## Project Structure
+
+```text
+project/
+├── src/
+│   └── Auction.php
+├── tests/
+│   ├── test.php
+│   └── fixtures/
+│       ├── valid.csv
+│       ├── tie.csv
+│       ├── decimal_bids.csv
+│       ├── invalid_bid.csv
+│       ├── single_bid.csv
+│       ├── empty.csv
+│       ├── invalid_row.csv
+│       └── empty_ad_id.csv
+├── auction.php
+└── README.md
+```
+
+---
+
+## Usage
+
+Execute:
+
+```bash
+php auction.php <file.csv>
+```
+
+Example:
+
+```bash
+php auction.php tests/fixtures/valid.csv
+```
+
+Output:
+
+```text
+4,33
+```
+
+---
+
+## Example
+
+Input file:
 
 ```csv
 1,0.5
@@ -24,65 +96,9 @@ Output:
 
 Explanation:
 
-* Ad `4` has the highest bid (`33.5`)
-* The second-highest bid is `33`
-* Therefore ad `4` wins and pays `33`
-
----
-
-## Requirements
-
-* PHP 8.0+ (developed and tested on PHP 8.5.7)
-* No frameworks
-* No third-party libraries
-
-Verify your PHP version:
-
-```bash
-php -v
-```
-
----
-
-## Project Structure
-
-```text
-.
-├── auction.php
-├── README.md
-├── sample.csv
-├── src
-│   └── Auction.php
-└── tests
-    ├── WinnerTest.php
-    ├── InvalidBidTest.php
-    ├── MissingFileTest.php
-    ├── SingleBidTest.php
-    ├── TieTest.php
-    └── fixtures
-        ├── valid.csv
-        ├── invalid_bid.csv
-        ├── single_bid.csv
-        └── tie.csv
-```
-
----
-
-## Running the Application
-
-Execute the application and provide a CSV file:
-
-```bash
-php auction.php sample.csv
-```
-
-Example:
-
-```bash
-php auction.php sample.csv
-```
-
-Output:
+- Ad `4` submitted the highest bid (`33.5`) and wins the auction.
+- The second-highest bid is `33`.
+- Therefore, the result is:
 
 ```text
 4,33
@@ -90,151 +106,120 @@ Output:
 
 ---
 
-## CSV Format
+## Algorithm
 
-The input CSV file must contain two columns:
+The solution processes the CSV file row by row using `fgetcsv()`.
 
-```csv
-ad_id,bid
-```
+During processing it keeps track of:
 
-Example:
+- The highest bid encountered.
+- The second-highest bid encountered.
+- The ad ID associated with the highest bid.
 
-```csv
-1,0.5
-2,33
-3,12
-4,33.5
-```
+No sorting is required.
 
-Rules:
+### Complexity
 
-* `ad_id` must not be empty
-* `bid` must be numeric
-* At least two valid bids are required
-
----
-
-## Running Tests
-
-Each test can be executed independently.
-
-### Winner Test
-
-```bash
-php tests/WinnerTest.php
-```
-
-Expected:
+**Time Complexity**
 
 ```text
-PASS: Winner test
+O(N)
 ```
 
-### Invalid Bid Test
-
-```bash
-php tests/InvalidBidTest.php
-```
-
-Expected:
-
-```text
-PASS: Invalid bid test
-```
-
-### Missing File Test
-
-```bash
-php tests/MissingFileTest.php
-```
-
-Expected:
-
-```text
-PASS: Missing file test
-```
-
-### Single Bid Test
-
-```bash
-php tests/SingleBidTest.php
-```
-
-Expected:
-
-```text
-PASS: Single bid test
-```
-
-### Tie Test
-
-```bash
-php tests/TieTest.php
-```
-
-Expected:
-
-```text
-PASS: Tie test
-```
-
----
-
-## Error Handling
-
-The application validates:
-
-* File existence
-* CSV row structure
-* Numeric bid values
-* Empty input files
-* Minimum number of bids
-
-Invalid input results in descriptive exceptions and a non-zero exit code.
-
----
-
-## Tie Handling
-
-If multiple advertisements share the highest bid, the first advertisement encountered in the CSV file is selected as the winner.
-
-Example:
-
-```csv
-1,33
-2,33
-3,10
-```
-
-Output:
-
-```text
-1,33
-```
-
----
-
-## Complexity Analysis
-
-Time Complexity:
-
-```text
-O(n)
-```
-
-Space Complexity:
+**Space Complexity**
 
 ```text
 O(1)
 ```
 
-The solution processes the CSV file in a single pass and stores only:
-
-* Current highest bid
-* Current second-highest bid
-* Winning advertisement ID
-
-This allows efficient processing of files containing 10,000 rows and beyond.
+Where `N` is the number of rows in the CSV file.
 
 ---
+
+## Input Validation
+
+The application validates:
+
+- File existence.
+- File readability.
+- Empty files.
+- Invalid row formats.
+- Empty advertisement IDs.
+- Non-numeric bid values.
+- Files containing fewer than two bids.
+
+Invalid input results in an appropriate exception and error message.
+
+---
+
+## Running Tests
+
+Execute:
+
+```bash
+php tests/test.php
+```
+
+Example output:
+
+```text
+RUNNING
+
+PASS: Winner determination
+PASS: Tie handling
+PASS: Decimal bids
+PASS: Missing file
+PASS: Invalid bid
+PASS: Single bid
+PASS: Empty CSV
+PASS: Invalid row
+PASS: Empty ad_id
+PASS: Large file (10000 rows)
+
+DONE
+```
+
+---
+
+## Test Coverage
+
+The tests cover:
+
+- Winner determination.
+- Second-price auction logic.
+- Tie handling.
+- Decimal bids.
+- Missing files.
+- Invalid bids.
+- Invalid row formats.
+- Empty advertisement IDs.
+- Empty CSV files.
+- Single-bid files.
+- Large files containing 10,000 rows.
+
+---
+
+## Assumptions
+
+- Bid values are numeric.
+- Advertisement IDs are non-empty strings.
+- At least two bids are required.
+- In case of equal highest bids, the first encountered advertisement is treated as the winner.
+- CSV rows follow the format:
+
+```text
+ad_id,bid
+```
+
+---
+
+## Possible Improvements
+
+For a production environment, the following improvements could be considered:
+
+- Support CSV headers.
+- Configurable tie-breaking rules.
+- PHPUnit-based automated testing.
+- Logging and monitoring.
+- Support additional input formats such as JSON.
+- Package the application as a Composer CLI command.

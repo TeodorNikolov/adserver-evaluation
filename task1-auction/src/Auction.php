@@ -26,49 +26,53 @@ class Auction
 
         $rowNumber = 0;
 
-        while (($row = fgetcsv($handle)) !== false) {
-            $rowNumber++;
+        try {
+            while (($row = fgetcsv($handle)) !== false) {
+                $rowNumber++;
 
-            if (count($row) < 2) {
-                throw new InvalidArgumentException(
-                    "Invalid row at line {$rowNumber}"
-                );
+                if (count($row) < 2) {
+                    throw new InvalidArgumentException(
+                        "Invalid row at line {$rowNumber}"
+                    );
+                }
+
+                $adId = trim($row[0]);
+                $bid = trim($row[1]);
+
+                if ($adId === '') {
+                    throw new InvalidArgumentException(
+                        "Empty ad_id at line {$rowNumber}"
+                    );
+                }
+
+                if (!is_numeric($bid)) {
+                    throw new InvalidArgumentException(
+                        "Invalid bid at line {$rowNumber}"
+                    );
+                }
+
+                $bid = (float) $bid;
+
+                if ($highestBid === null || $bid > $highestBid) {
+                    $secondHighestBid = $highestBid;
+
+                    $highestBid = $bid;
+                    $highestAdId = $adId;
+                } elseif (
+                    $secondHighestBid === null ||
+                    $bid > $secondHighestBid
+                ) {
+                    $secondHighestBid = $bid;
+                }
             }
-
-            $adId = trim($row[0]);
-            $bid = trim($row[1]);
-
-            if ($adId === '') {
-                throw new InvalidArgumentException(
-                    "Empty ad_id at line {$rowNumber}"
-                );
-            }
-
-            if (!is_numeric($bid)) {
-                throw new InvalidArgumentException(
-                    "Invalid bid at line {$rowNumber}"
-                );
-            }
-
-            $bid = (float)$bid;
-
-            if ($highestBid === null || $bid > $highestBid) {
-                $secondHighestBid = $highestBid;
-
-                $highestBid = $bid;
-                $highestAdId = $adId;
-            } elseif (
-                $secondHighestBid === null ||
-                $bid > $secondHighestBid
-            ) {
-                $secondHighestBid = $bid;
-            }
+        } finally {
+            fclose($handle);
         }
 
-        fclose($handle);
-
         if ($highestBid === null) {
-            throw new InvalidArgumentException("CSV file is empty.");
+            throw new InvalidArgumentException(
+                "CSV file is empty."
+            );
         }
 
         if ($secondHighestBid === null) {
