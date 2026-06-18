@@ -1,108 +1,348 @@
-# Escape a Labyrinth
+# Labyrinth Solver
 
 ## Overview
 
-This project solves the "Escape a Labyrinth" problem using pure PHP (no frameworks, no external libraries).
+This application solves a labyrinth represented as a matrix of `0`s and `1`s, where:
 
-You are given a 2D grid (matrix):
+* `0` represents a passable cell.
+* `1` represents a wall.
+* The entrance is located at the top-left corner `(0,0)`.
+* The exit is located at the bottom-right corner `(w-1,h-1)`.
 
-- `0` = open cell (walkable)
-- `1` = wall (blocked)
+The objective is to find the length of the shortest path from the entrance to the exit while being allowed to remove **at most one wall**.
 
-You start at the **top-left corner (0,0)** and must reach the **bottom-right corner (n-1, m-1)**.
-
-### Special rule:
-You are allowed to remove **at most one wall** during the journey.
+The path length is defined as the total number of cells visited, including both the start and end positions.
 
 ---
 
-## Objective
+## Project Structure
 
-Return the **shortest path length**, including:
+```text
+project/
+├── src/
+│   └── LabyrinthSolver.php
+├── tests/
+│   └── test.php
+├── solve.php
+└── README.md
+```
 
-- starting cell
-- ending cell
-- all steps in between
+### File Descriptions
 
-Movement is allowed only in:
-- up
-- down
-- left
-- right
-
-(no diagonal movement)
+| File                      | Description                                                   |
+| ------------------------- | ------------------------------------------------------------- |
+| `src/LabyrinthSolver.php` | Contains the BFS-based labyrinth solver implementation.       |
+| `tests/test.php`          | Contains functional and validation tests for the solver.      |
+| `solve.php`               | Command-line example demonstrating how to execute the solver. |
+| `README.md`               | Project documentation and usage instructions.                 |
 
 ---
 
 ## Approach
 
-We use **Breadth-First Search (BFS)** with an extended state:
-(row, col, wall_used)
+The solution uses **Breadth-First Search (BFS)**.
 
+Since every move has the same cost, BFS guarantees the shortest path in an unweighted graph.
 
-Where:
-- `wall_used = 0` → no wall has been removed yet
-- `wall_used = 1` → one wall has already been removed
+To support removing a wall, each position is treated as two distinct states:
 
----
+* Cell reached without removing a wall.
+* Cell reached after removing a wall.
 
-## Key Idea
+This allows the algorithm to correctly distinguish between:
 
-Each position is tracked twice:
-
-- visited without using wall removal
-- visited after using wall removal
-
-We store shortest distances in a 3D structure:
-
-```bash
-dist[row][col][wall_used]
+```text
+(row, column, wallRemoved = false)
 ```
 
+and
 
-This ensures we always find the optimal path.
+```text
+(row, column, wallRemoved = true)
+```
+
+which represent different future possibilities.
+
+The BFS state is represented as:
+
+```text
+(row, column, wallRemoved)
+```
+
+where:
+
+* `row` and `column` identify the current position.
+* `wallRemoved` indicates whether the wall-removal opportunity has already been used.
 
 ---
 
-## Complexity
+## Algorithm
 
-- Time Complexity: **O(n × m × 2)**
-- Space Complexity: **O(n × m × 2)**
+1. Start BFS from the entrance `(0,0)`.
+2. Maintain a queue of states:
 
-Where:
-- n = number of rows
-- m = number of columns
+```text
+(row, column, wallRemoved)
+```
+
+3. Explore neighboring cells in the four cardinal directions:
+
+   * Up
+   * Down
+   * Left
+   * Right
+
+4. If a wall is encountered:
+
+   * Continue only if no wall has been removed yet.
+   * Mark the wall-removal state as used.
+
+5. Track distances using:
+
+```text
+dist[row][column][wallRemoved]
+```
+
+6. Return the minimum distance recorded for the destination cell.
 
 ---
 
-## How to Run
+## Time and Space Complexity
 
-Run the solution file:
+Let:
+
+```text
+R = number of rows
+C = number of columns
+```
+
+Each cell can be visited in two states:
+
+```text
+wallRemoved = 0
+wallRemoved = 1
+```
+
+### Time Complexity
+
+```text
+O(R × C)
+```
+
+### Space Complexity
+
+```text
+O(R × C)
+```
+
+For the maximum maze size specified in the task:
+
+```text
+20 × 20 × 2 = 800 states
+```
+
+which is very efficient.
+
+---
+
+## Requirements
+
+* PHP 8.1 or higher
+
+No external dependencies are required.
+
+---
+
+## Running the Example
+
+Execute:
 
 ```bash
 php solve.php
 ```
 
+Expected output:
+
+```text
+Shortest path length: 11
+```
+
+The example uses the first labyrinth provided in the assignment.
+
+---
+
+## Usage
+
 Example:
 
-Input
+```php
+require_once __DIR__ . '/src/LabyrinthSolver.php';
 
-[
+$map = [
     [0,0,0,0,0,0],
     [1,1,1,1,1,0],
     [0,0,0,0,0,0],
     [0,1,1,1,1,1],
     [0,1,1,1,1,1],
     [0,0,0,0,0,0]
+];
+
+$result = LabyrinthSolver::solution($map);
+
+echo "Shortest path length: {$result}" . PHP_EOL;
+```
+
+---
+
+## Input Validation
+
+The implementation validates the input before processing.
+
+### Empty maps
+
+Invalid:
+
+```php
+[]
+```
+
+### Empty rows
+
+Invalid:
+
+```php
+[
+    []
 ]
+```
 
-Output
+### Non-rectangular maps
 
-11
+Invalid:
+
+```php
+[
+    [0,0],
+    [0]
+]
+```
+
+### Invalid values
+
+Only `0` and `1` are accepted.
+
+Invalid:
+
+```php
+[
+    [0,2],
+    [0,0]
+]
+```
+
+An `InvalidArgumentException` is thrown when invalid input is detected.
+
+---
+
+## Running Tests
+
+Execute:
+
+```bash
+php tests/test.php
+```
+
+Example output:
+
+```text
+RUNNING
+
+PASS: Assignment example #1
+PASS: Assignment example #2
+PASS: 2x2 empty maze
+PASS: 2x2 maze requiring wall removal
+PASS: Path exists without removing a wall
+PASS: Optimal route may remove one wall
+PASS: Empty map
+PASS: Empty row
+PASS: Non-rectangular map
+PASS: Invalid values
+PASS: Non-integer value
+
+DONE
+```
+
+---
+
+## Test Coverage
+
+The tests cover:
+
+* Assignment example #1
+* Assignment example #2
+* Small maze scenarios
+* Paths requiring wall removal
+* Paths not requiring wall removal
+* Empty maps
+* Empty rows
+* Non-rectangular maps
+* Invalid values
+* Edge cases and validation scenarios
+
+---
 
 ## Assumptions
 
-- Grid is always valid and rectangular
-- Start and end cells are always 0
-- At most one wall can be removed
-- A valid path always exists
+* The start position `(0,0)` is always passable.
+* The destination `(w-1,h-1)` is always passable.
+* Movement is limited to cardinal directions.
+* Diagonal movement is not allowed.
+* At most one wall may be removed.
+* The maze dimensions are between 2 and 20.
+
+---
+
+## Possible Improvements
+
+For larger labyrinths or production use, the following enhancements could be considered:
+
+* Return the actual shortest path instead of only its length.
+* Support removing `K` walls instead of one.
+* Stop the BFS immediately when the destination is reached.
+* Add path visualization.
+* Integrate the solver into a REST API or service layer.
+* Add PHPUnit-based automated tests.
+
+---
+
+## Design Decisions
+
+### Why BFS?
+
+Breadth-First Search was chosen because the labyrinth can be modeled as an unweighted graph where each move has the same cost.
+
+BFS guarantees that the first discovered path to a state is the shortest possible path.
+
+### Why Track Two States Per Cell?
+
+Reaching a cell before removing a wall is different from reaching it after removing a wall.
+
+For example:
+
+```text
+(3,4,false)
+```
+
+and
+
+```text
+(3,4,true)
+```
+
+represent different future possibilities and must be treated as separate states.
+
+### Why Use SplQueue?
+
+`SplQueue` provides efficient queue operations and is more suitable for BFS than repeatedly using `array_shift()`, which has linear complexity.
+
+This keeps queue operations efficient throughout the traversal.

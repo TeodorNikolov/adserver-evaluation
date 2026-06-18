@@ -14,7 +14,7 @@ $map = [
 try {
     $result = LabyrinthSolver::solution($map);
 
-    echo "Shortest path length: " . $result . PHP_EOL;
+    echo "Shortest path length: {$result}" . PHP_EOL;
 
 } catch (Throwable $e) {
     fwrite(STDERR, "Error: " . $e->getMessage() . PHP_EOL);

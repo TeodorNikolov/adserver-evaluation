@@ -1,139 +1,225 @@
 # Word Frequency Counter
 
-A simple PHP application that counts word frequency from text input and stores the result in a JSON file.
+## Overview
 
-The system provides a minimal HTTP API and supports persistent storage without using any frameworks or external runtime libraries.
+This application provides a simple REST API for counting word frequencies across multiple text submissions.
+
+The system supports:
+
+* Submitting text via HTTP POST requests.
+* Retrieving all word frequencies.
+* Retrieving the frequency of a specific word.
+* Persistent storage between requests.
+* Concurrent access through file locking.
+
+Word matching is case-insensitive and supports Unicode characters.
 
 ---
 
 ## Requirements
 
-- PHP 8.0+ (tested on PHP 8.5.7)
-- No frameworks
-- No third-party runtime libraries
-- PHPUnit (for testing)
+* PHP 8.1 or higher
+* Composer
 
-Verify PHP version:
+---
+
+## Installation
+
+Clone the repository and install dependencies:
 
 ```bash
-php -v
+composer install
 ```
+
+Start the PHP development server:
+
+```bash
+php -S localhost:8000 public/index.php
+```
+
+The API will be available at:
+
+```text
+http://localhost:8000
+```
+---
 
 ## Project Structure
 
 ```text
-.
-├── public
+project/
+├── public/
 │   └── index.php
-├── src
+├── src/
 │   └── WordCounter.php
-├── storage
-│   └── data.json   (auto-created at runtime if missing)
-├── tests
+├── storage/
+│   └── data.json (auto-created at runtime if missing)
+├── tests/
 │   └── WordCounterTest.php
+├── composer.json
 └── README.md
-
-## Running the Application
-
-Start the PHP built-in server:
-
-```bash
-php -S localhost:8000 -t public
 ```
+
+---
 
 ## API Endpoints
 
-- POST /words
+### POST /words
 
-Request:
+Processes text and updates word frequencies.
 
+#### Request
+
+```http
+POST /words
+Content-Type: application/json
+```
+
+```json
 {
-  "text": "Love grows where kindness lives."
+    "text": "Love grows where kindness lives."
 }
+```
 
-Response:
+#### Response
 
+```json
 {
-  "status": "ok"
+    "status": "ok"
 }
+```
 
-- GET /words
+---
 
-Response:
+### GET /words
 
+Returns all recorded words and their frequencies.
+
+#### Request
+
+```http
+GET /words
+```
+
+#### Response
+
+```json
 {
-  "love": 1,
-  "grows": 1,
-  "where": 1,
-  "kindness": 2,
-  "lives": 2
+    "grows": 1,
+    "kindness": 2,
+    "lives": 2,
+    "love": 1,
+    "where": 1
 }
+```
 
-- GET /words/{word}
+---
 
-Example:
+### GET /words/{word}
 
+Returns the frequency of a specific word.
+
+#### Request
+
+```http
 GET /words/kindness
+```
 
-Response:
+#### Response
 
+```json
 {
-  "word": "kindness",
-  "count": 2
+    "word": "kindness",
+    "count": 2
 }
+```
+
+---
 
 ## Word Processing Rules
 
-- Input is converted to lowercase
-- Punctuation is removed
-- Words are extracted using regex ([a-zA-Z]+)
-- Each word is counted incrementally
+* Words are treated case-insensitively.
+* Unicode characters are supported.
+* Punctuation is ignored.
+* Numbers are considered part of words.
+* Word frequencies accumulate across multiple POST requests.
 
-Example:
+Examples:
 
-"Love, love! LOVE"
+```text
+LOVE Love love
+```
 
-Result:
+Results in:
 
-love => 3
-Storage
+```text
+love = 3
+```
 
-- All data is persisted in:
+---
 
+## Storage
+
+Word frequencies are stored in:
+
+```text
 storage/data.json
+```
 
-Example content:
-{
-  "love": 2,
-  "kindness": 3
-}
+The application uses file locking (`flock`) to ensure safe concurrent access:
 
-If the file or folder does not exist, it is automatically created at runtime.
+* Shared locks (`LOCK_SH`) for reads.
+* Exclusive locks (`LOCK_EX`) for writes.
 
-## Concurrency Handling
+This prevents data corruption and lost updates when multiple requests are processed simultaneously.
 
-The application uses file locking (flock) inside WordCounter to safely handle concurrent write requests.
+---
 
-This prevents race conditions when multiple POST requests update the file at the same time.
+## Error Handling
+
+The API returns appropriate HTTP status codes:
+
+| Status Code | Description             |
+| ----------- | ----------------------- |
+| 200         | Success                 |
+| 400         | Invalid request payload |
+| 404         | Endpoint not found      |
+| 405         | Method not allowed      |
+| 500         | Internal server error   |
+
+---
 
 ## Running Tests
 
-This project uses PHPUnit for unit testing.
-
-- Install PHPUnit
-
-```bash
-composer require --dev phpunit/phpunit
-```
-
-- Run All Tests
-
-Run tests using:
+Execute the PHPUnit test suite:
 
 ```bash
 php vendor/bin/phpunit tests
 ```
 
-Expected output:
+Example output:
 
-OK (7 tests, 11 assertions)
+```text
+OK (16 tests, 23 assertions)
+```
+
+---
+
+## Assumptions
+
+* Text is submitted as JSON using the `text` field.
+* Storage is file-based for simplicity.
+* The application is intended as a lightweight coding challenge solution rather than a production-ready distributed system.
+
+---
+
+## Possible Improvements
+
+For a production environment, the following improvements could be considered:
+
+* Replace JSON storage with a relational database or Redis.
+* Introduce dependency injection and storage abstractions.
+* Add integration and load tests.
+* Support pagination for large datasets.
+* Add authentication and rate limiting.
+* Process extremely large inputs using streaming techniques.
